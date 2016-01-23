@@ -82,8 +82,8 @@ for product_dirname in os.listdir(PKGS_DIR):
     cmd = [
         "/usr/local/munki/munkiimport",
         "--nointeractive",
-        "--name='{0}'".format(item_name),
-        "--displayname='{0}'".format(display_name),
+        "--name=\"{0}\"".format(item_name),
+        "--displayname=\"{0}\"".format(display_name),
         ]
     cmd += MUNKIIMPORT_OPTIONS
     cmd += ["--uninstallerpkg", uninstall_pkg_path,
