@@ -35,18 +35,21 @@
 import os
 import subprocess
 import sys
+import re
+import xml.etree.ElementTree as ET
 
 from glob import glob
 
 MUNKIIMPORT_OPTIONS = [
-    "--subdirectory", "apps/Adobe/CC/2014",
+    "--subdirectory", "apps/Adobe/CC/2015",
     "--developer", "Adobe",
     "--category", "Creativity",
 ]
 
 
 if len(sys.argv) < 2:
-    sys.exit("This script requires a single argument. See the script comments.")
+    sys.exit("This script requires a single argument. See the script comments.\
+             ")
 
 PKGS_DIR = sys.argv[1]
 PKGS_DIR = os.path.abspath(PKGS_DIR)
@@ -56,16 +59,31 @@ for product_dirname in os.listdir(PKGS_DIR):
     if not os.path.isdir(product):
         continue
     install_pkg_path_glob = glob(os.path.join(product, "Build/*Install.pkg"))
-    uninstall_pkg_path_glob = glob(os.path.join(product, "Build/*Uninstall.pkg"))
+    uninstall_pkg_path_glob = glob(os.path.join(product, "Build/*Uninstall.pkg\
+                                                         "))
+    ccp_file_path_glob = glob(os.path.join(product, "*.ccp"))
+
+    tree = ET.parse(ccp_file_path_glob[0])
+
+    media_list = tree.findall(".//Media")
+    for media in media_list:
+        if 'adobeCode' in media.find(".//DeploymentInstall//Payload").keys():
+            display_name = media.find(".//prodName").text
+            display_name = "Adobe {0}".format(display_name)
+            item_name = re.sub('[()\s]', '', display_name)
+
     if not install_pkg_path_glob or not uninstall_pkg_path_glob:
         print >> sys.stderr, ("'%s' doesn't look like a CCP package, skipping"
                               % product)
         continue
     install_pkg_path = install_pkg_path_glob[0]
     uninstall_pkg_path = uninstall_pkg_path_glob[0]
+
     cmd = [
         "/usr/local/munki/munkiimport",
         "--nointeractive",
+        "--name='{0}'".format(item_name),
+        "--displayname='{0}'".format(display_name),
         ]
     cmd += MUNKIIMPORT_OPTIONS
     cmd += ["--uninstallerpkg", uninstall_pkg_path,
