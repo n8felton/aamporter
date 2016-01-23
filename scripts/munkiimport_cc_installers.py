@@ -59,10 +59,17 @@ for product_dirname in os.listdir(PKGS_DIR):
     if not os.path.isdir(product):
         continue
     install_pkg_path_glob = glob(os.path.join(product, "Build/*Install.pkg"))
-    uninstall_pkg_path_glob = glob(os.path.join(product, "Build/*Uninstall.pkg\
-                                                         "))
+    uninstall_pkg_path_glob = glob(os.path.join(product, "Build/*Uninstall.pkg"
+                                                ))
     ccp_file_path_glob = glob(os.path.join(product, "*.ccp"))
 
+    if not install_pkg_path_glob or not uninstall_pkg_path_glob:
+        print >> sys.stderr, ("'%s' doesn't look like a CCP package, skipping"
+                              % product)
+        continue
+
+    install_pkg_path = install_pkg_path_glob[0]
+    uninstall_pkg_path = uninstall_pkg_path_glob[0]
     tree = ET.parse(ccp_file_path_glob[0])
 
     media_list = tree.findall(".//Media")
@@ -71,13 +78,6 @@ for product_dirname in os.listdir(PKGS_DIR):
             display_name = media.find(".//prodName").text
             display_name = "Adobe {0}".format(display_name)
             item_name = re.sub('[()\s]', '', display_name)
-
-    if not install_pkg_path_glob or not uninstall_pkg_path_glob:
-        print >> sys.stderr, ("'%s' doesn't look like a CCP package, skipping"
-                              % product)
-        continue
-    install_pkg_path = install_pkg_path_glob[0]
-    uninstall_pkg_path = uninstall_pkg_path_glob[0]
 
     cmd = [
         "/usr/local/munki/munkiimport",
