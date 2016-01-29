@@ -163,6 +163,8 @@ def getChannelsFromProductPlists(products):
                 channels[channel]['munki_update_for'].append(product['munki_update_for'])
             if 'munki_repo_destination_path' in product.keys():
                 channels[channel]['munki_repo_destination_path'] = product['munki_repo_destination_path']
+            if 'makepkginfo_options' in product.keys():
+                channels[channel]['makepkginfo_options'] = product['makepkginfo_options']
     return channels
 
 
@@ -639,7 +641,7 @@ save a product plist containing every Channel ID found for the product. Plist is
                     L.log(DEBUG, "No File XML element found. Skipping update.")
                 else:
                     filename = file_element.find('Name').text
-                    bytes = file_element.find('Size').text
+                    update_bytes = file_element.find('Size').text
                     description = update.xml.find('Description/en_US').text
                     display_name = update.xml.find('DisplayName/en_US').text
 
@@ -650,7 +652,9 @@ save a product plist containing every Channel ID found for the product. Plist is
                         updates[update.product][update.version]['channel_ids'] = []
                         updates[update.product][update.version]['update_for'] = []
                     updates[update.product][update.version]['channel_ids'].append(update.channel)
-                    for opt in ['munki_repo_destination_path', 'munki_update_for']:
+                    for opt in ['munki_repo_destination_path',
+                                'munki_update_for',
+                                'makepkginfo_options']:
                         if opt in channels[update.channel].keys():
                             updates[update.product][update.version][opt] = channels[update.channel][opt]
                     updates[update.product][update.version]['description'] = description
@@ -663,15 +667,15 @@ save a product plist containing every Channel ID found for the product. Plist is
                     need_to_dl = True
                     if os.path.exists(output_filename):
                         we_have_bytes = os.stat(output_filename).st_size
-                        if we_have_bytes == int(bytes):
+                        if we_have_bytes == int(update_bytes):
                             L.log(INFO, "Skipping download of %s %s, it is already cached." 
                                 % (update.product, update.version))
                             need_to_dl = False
                         else:
                             L.log(VERBOSE, "Incomplete download (%s bytes on disk, should be %s), re-starting." % (
-                                we_have_bytes, bytes))
+                                we_have_bytes, update_bytes))
                     if need_to_dl:
-                        L.log(INFO, "Downloading %s %s (%s bytes) to %s" % (update.product, update.version, bytes, output_filename))
+                        L.log(INFO, "Downloading %s %s (%s bytes) to %s" % (update.product, update.version, update_bytes, output_filename))
                         if opts.no_progressbar:
                             urllib.urlretrieve(dmg_url, output_filename)
                         else:
@@ -740,6 +744,13 @@ save a product plist containing every Channel ID found for the product. Plist is
                     if '--catalog' not in munkiimport_opts:
                         munkiimport_opts.append('--catalog')
                         munkiimport_opts.append('testing')
+
+                    if 'makepkginfo_options' in version_meta:
+                        L.log(VERBOSE,
+                            "Appending makepkginfo options: %s" %
+                            " ".join(version_meta['makepkginfo_options']))
+                        munkiimport_opts += version_meta['makepkginfo_options']
+
                     if pref('munki_tool') == 'munkiimport':
                         import_cmd = ['/usr/local/munki/munkiimport', '--nointeractive']
                     elif pref('munki_tool') == 'makepkginfo':
