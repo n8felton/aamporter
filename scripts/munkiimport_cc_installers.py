@@ -74,16 +74,15 @@ for product_dirname in os.listdir(PKGS_DIR):
 
     media_list = tree.findall(".//Media")
     for media in media_list:
-        if 'adobeCode' in media.find(".//DeploymentInstall//Payload").keys():
-            display_name = media.find(".//prodName").text
-            display_name = "Adobe {0}".format(display_name)
-            item_name = re.sub('[()\s]', '', display_name)
+      display_name = media.find(".//prodName").text
+      display_name = "Adobe {0}".format(display_name)
+      item_name = re.sub('[()\s]', '', display_name)
 
     cmd = [
         "/usr/local/munki/munkiimport",
         "--nointeractive",
-        "--name=\"{0}\"".format(item_name),
-        "--displayname=\"{0}\"".format(display_name),
+        "--name={0}".format(item_name),
+        "--displayname={0}".format(display_name),
         ]
     cmd += MUNKIIMPORT_OPTIONS
     cmd += ["--uninstallerpkg", uninstall_pkg_path,
